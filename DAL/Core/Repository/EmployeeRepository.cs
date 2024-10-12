@@ -1,5 +1,6 @@
 ﻿using DAL.Core.IRepository;
 using DAL.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Core.Repository
 {
@@ -7,22 +8,43 @@ namespace DAL.Core.Repository
     {
         public EmployeeRepository(PersonnelManagementDBContext context) : base(context) { }
 
-        public Task AddAsync(Employee employee)
+        private PersonnelManagementDBContext PersonnelManagementDBContext => Context;
+        public override async Task<IEnumerable<Employee>> GetAllAsync()
         {
-            PersonnelManagementDBContext.Employees.Add(employee);
-            return Task.CompletedTask;
-            
+            return await PersonnelManagementDBContext.Employees
+                .Include(e => e.EmployeeDetail)
+                .Include(e => e.EmployeeDetail.Certifications)
+                .Include(e => e.EmployeeDetail.Experiences)
+                .Include(e => e.EmployeeDetail.Educations)
+                .ToListAsync();
         }
 
-        public Task AddDetailAsync(EmployeeDetail employeeDetail)
+        public override async Task<Employee> GetByIdAsync(Guid id)
         {
-            PersonnelManagementDBContext.EmployeeDetails.Add(employeeDetail);
-            return Task.CompletedTask;
-
+            return await PersonnelManagementDBContext.Employees
+                .Include(e => e.EmployeeDetail)
+                .Include(e => e.EmployeeDetail.Certifications)
+                .Include(e => e.EmployeeDetail.Experiences)
+                .Include(e => e.EmployeeDetail.Educations)
+                .FirstOrDefaultAsync(e => e.Id == id);
         }
 
-        private PersonnelManagementDBContext PersonnelManagementDBContext { get { return Context; } }
+
+        public async Task<EmployeeDetail> GetDetailByIdAsync(Guid id)
+        {
+            return await PersonnelManagementDBContext.EmployeeDetails
+                .Include(e => e.Certifications)
+                .Include(e => e.Experiences)
+                .Include(e => e.Educations)
+                .FirstOrDefaultAsync(e => e.EmployeeId == id);
+        }
 
 
+        public async Task AddDetailAsync(EmployeeDetail employeeDetail)
+        {
+            await PersonnelManagementDBContext.EmployeeDetails.AddAsync(employeeDetail);
+        }
+
+        
     }
 }

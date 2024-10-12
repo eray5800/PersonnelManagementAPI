@@ -4,7 +4,6 @@ using DAL.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,11 +11,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(PersonnelManagementDBContext))]
-    [Migration("20241002210509_firstMig")]
-    partial class firstMig
+    partial class PersonnelManagementDBContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,6 +21,40 @@ namespace DAL.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("DAL.Models.Certification", b =>
+                {
+                    b.Property<Guid>("CertificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CertificationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CertificationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CertificationProvider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("EmployeeDetailId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("QualificationId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("CertificationId");
+
+                    b.HasIndex("EmployeeDetailId");
+
+                    b.ToTable("Certifications", (string)null);
+                });
 
             modelBuilder.Entity("DAL.Models.Company", b =>
                 {
@@ -35,6 +66,9 @@ namespace DAL.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("AdminID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Created_At")
                         .HasColumnType("datetime2");
@@ -98,13 +132,54 @@ namespace DAL.Migrations
                     b.ToTable("CompanyHolidays", (string)null);
                 });
 
+            modelBuilder.Entity("DAL.Models.Education", b =>
+                {
+                    b.Property<Guid>("EducationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Degree")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("EmployeeDetailId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FieldOfStudy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("School")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("EducationId");
+
+                    b.HasIndex("EmployeeDetailId");
+
+                    b.ToTable("Educations", (string)null);
+                });
+
             modelBuilder.Entity("DAL.Models.Employee", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -114,6 +189,7 @@ namespace DAL.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -162,6 +238,11 @@ namespace DAL.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -184,10 +265,8 @@ namespace DAL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("Certifications")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<DateTime>("BirthDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("City")
                         .IsRequired()
@@ -202,18 +281,8 @@ namespace DAL.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Education")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Experience")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -299,6 +368,10 @@ namespace DAL.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -312,6 +385,40 @@ namespace DAL.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("ExpenseRequests", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Models.Experience", b =>
+                {
+                    b.Property<Guid>("ExperienceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EmployeeDetailId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ExperienceId");
+
+                    b.HasIndex("EmployeeDetailId");
+
+                    b.ToTable("Experiences");
                 });
 
             modelBuilder.Entity("DAL.Models.LeaveRequest", b =>
@@ -356,6 +463,124 @@ namespace DAL.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("LeaveRequests", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.CompanyRequest", b =>
+                {
+                    b.Property<Guid>("CompanyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CompanyDocument")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("Created_At")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("Updated_At")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("CompanyId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("CompanyRequests", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Expense", b =>
+                {
+                    b.Property<Guid>("ExpenseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("ExpenseId");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("Expenses", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Leave", b =>
+                {
+                    b.Property<Guid>("LeaveId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LeaveType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("LeaveId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("Leaves", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -489,6 +714,17 @@ namespace DAL.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("DAL.Models.Certification", b =>
+                {
+                    b.HasOne("DAL.Models.EmployeeDetail", "EmployeeDetail")
+                        .WithMany("Certifications")
+                        .HasForeignKey("EmployeeDetailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EmployeeDetail");
+                });
+
             modelBuilder.Entity("DAL.Models.CompanyHoliday", b =>
                 {
                     b.HasOne("DAL.Models.Company", "Company")
@@ -500,19 +736,31 @@ namespace DAL.Migrations
                     b.Navigation("Company");
                 });
 
-            modelBuilder.Entity("DAL.Models.Employee", b =>
+            modelBuilder.Entity("DAL.Models.Education", b =>
                 {
-                    b.HasOne("DAL.Models.Company", null)
-                        .WithMany("Employees")
-                        .HasForeignKey("Id")
+                    b.HasOne("DAL.Models.EmployeeDetail", "EmployeeDetail")
+                        .WithMany("Educations")
+                        .HasForeignKey("EmployeeDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("EmployeeDetail");
+                });
+
+            modelBuilder.Entity("DAL.Models.Employee", b =>
+                {
+                    b.HasOne("DAL.Models.Company", "Company")
+                        .WithMany("Employees")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("DAL.Models.EmployeeDetail", b =>
                 {
                     b.HasOne("DAL.Models.Employee", "Employee")
-                        .WithOne()
+                        .WithOne("EmployeeDetail")
                         .HasForeignKey("DAL.Models.EmployeeDetail", "EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -542,10 +790,62 @@ namespace DAL.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("DAL.Models.Experience", b =>
+                {
+                    b.HasOne("DAL.Models.EmployeeDetail", "EmployeeDetail")
+                        .WithMany("Experiences")
+                        .HasForeignKey("EmployeeDetailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EmployeeDetail");
+                });
+
             modelBuilder.Entity("DAL.Models.LeaveRequest", b =>
                 {
                     b.HasOne("DAL.Models.Employee", "Employee")
                         .WithMany("LeaveRequests")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("Data.Models.CompanyRequest", b =>
+                {
+                    b.HasOne("DAL.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("Data.Models.Expense", b =>
+                {
+                    b.HasOne("DAL.Models.Company", "Company")
+                        .WithMany("Expenses")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Models.Employee", "Employee")
+                        .WithMany("Expense")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("Data.Models.Leave", b =>
+                {
+                    b.HasOne("DAL.Models.Employee", "Employee")
+                        .WithMany("Leaves")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -610,14 +910,32 @@ namespace DAL.Migrations
 
                     b.Navigation("Events");
 
+                    b.Navigation("Expenses");
+
                     b.Navigation("Holidays");
                 });
 
             modelBuilder.Entity("DAL.Models.Employee", b =>
                 {
+                    b.Navigation("EmployeeDetail")
+                        .IsRequired();
+
+                    b.Navigation("Expense");
+
                     b.Navigation("ExpenseRequests");
 
                     b.Navigation("LeaveRequests");
+
+                    b.Navigation("Leaves");
+                });
+
+            modelBuilder.Entity("DAL.Models.EmployeeDetail", b =>
+                {
+                    b.Navigation("Certifications");
+
+                    b.Navigation("Educations");
+
+                    b.Navigation("Experiences");
                 });
 #pragma warning restore 612, 618
         }

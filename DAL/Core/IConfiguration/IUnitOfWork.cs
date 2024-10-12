@@ -10,6 +10,9 @@ namespace DAL.Core.IConfiguration
     public interface IUnitOfWork
     {
         IEmployeeRepository Employees { get; }
+        ICompanyRequestRepository CompanyRequests { get; }
+
+        ICompanyRepository Companies { get; }
 
         Task<int> CommitAsync();
     }
