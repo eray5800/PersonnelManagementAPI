@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BAL.CompanyServices;
 using BAL.EmployeeServices;
 using DAL.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -20,15 +21,17 @@ namespace PersonnelManagementAPI.Controllers
         private readonly IMapper _mapper;
         private readonly UserManager<Employee> _userManager;
         private readonly IConfiguration _configuration; 
-        private readonly SignInManager<Employee> _signInManager; 
+        private readonly SignInManager<Employee> _signInManager;
+        private readonly CompanyService _companyService;
 
-        public EmployeeController(EmployeeService employeeService, IMapper mapper, UserManager<Employee> userManager, IConfiguration configuration, SignInManager<Employee> signInManager)
+        public EmployeeController(EmployeeService employeeService, IMapper mapper, UserManager<Employee> userManager, IConfiguration configuration, SignInManager<Employee> signInManager,CompanyService companyService)
         {
             _employeeService = employeeService;
             _mapper = mapper;
             _userManager = userManager;
             _configuration = configuration;
-            _signInManager = signInManager; 
+            _signInManager = signInManager;
+            _companyService = companyService;
         }
 
 
@@ -75,37 +78,6 @@ namespace PersonnelManagementAPI.Controllers
                 token = token 
             });
         }
-
-
-        private async Task<string> GenerateJwtToken(Employee employee)
-        {
-            var userRoles = await _userManager.GetRolesAsync(employee);
-
-            var claims = new List<Claim>
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, employee.Id.ToString()),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new Claim(ClaimTypes.Name, employee.UserName),
-        new Claim("exp", DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])).ToString()) // Add expiration claim
-    };
-
-            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])),
-                signingCredentials: creds);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-
  
         [HttpPost("{EmployeeId}")]
         public async Task<IActionResult> AddEmployeeDetail(Guid EmployeeId, [FromBody] SaveEmployeeDetailDTO saveEmployeeDetailDto)
@@ -158,15 +130,56 @@ namespace PersonnelManagementAPI.Controllers
 
 
         [HttpGet("{EmployeeId}")]
+        [Authorize]
         public async Task<IActionResult> GetEmployeeById(Guid EmployeeId)
         {
-            var employee = await _employeeService.GetEmployeeByID(EmployeeId);
-            if (employee == null)
-                return NotFound();
+            // Get the user ID from the token
+            var requestUserId = Guid.Parse(GetUserIdFromToken());
 
-            var employeeDTO = _mapper.Map<EmployeeDTO>(employee);
-            return Ok(employeeDTO);
+            // Check if the requesting user is the same as the employee
+            if (EmployeeId == requestUserId)
+            {
+                var employee = await _employeeService.GetEmployeeByID(EmployeeId);
+                if (employee == null)
+                    return NotFound();
+
+                // Map and return employee DTO if the user is the same
+                var employeeDTO = _mapper.Map<EmployeeDTO>(employee);
+                return Ok(employeeDTO);
+            }
+            else
+            {
+                // If not the same, get the employee's company information
+                var employee = await _employeeService.GetEmployeeByID(EmployeeId);
+                if (employee == null)
+                    return NotFound();
+
+                // Check if the employee belongs to a company
+                if (employee.CompanyId != null)
+                {
+                    // Get the company associated with the employee
+                    var company = await _companyService.GetCompanyByEmployeeId(EmployeeId);
+
+                    // Check if the requesting user is the admin of that company
+                    if (company.AdminID == requestUserId)
+                    {
+                        var employeeDTO = _mapper.Map<EmployeeDTO>(employee);
+                        return Ok(employeeDTO);
+                    }
+                    else
+                    {
+                        // If the user is not the admin, return Unauthorized
+                        return Unauthorized();
+                    }
+                }
+                else
+                {
+                    return Unauthorized();
+                }
+            }
         }
+
+
 
         [HttpPut("{EmployeeId}")]
         public async Task<IActionResult> UpdateEmployee(Guid EmployeeId, [FromBody] SaveEmployeeDTO saveEmployeeDto)
@@ -188,6 +201,9 @@ namespace PersonnelManagementAPI.Controllers
             return NoContent();
         }
 
+
+
+
         [HttpDelete("{EmployeeId}")]
         public async Task<IActionResult> DeleteEmployee(Guid EmployeeId)
         {
@@ -202,6 +218,62 @@ namespace PersonnelManagementAPI.Controllers
             }
 
             return NoContent();
+        }
+
+        private async Task<string> GenerateJwtToken(Employee employee)
+        {
+            var userRoles = await _userManager.GetRolesAsync(employee);
+
+            var claims = new List<Claim>
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, employee.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim(ClaimTypes.Name, employee.UserName),
+        new Claim("exp", DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])).ToString()) // Add expiration claim
+    };
+
+            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+
+        private string GetUserIdFromToken()
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+
+            try
+            {
+                var tokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
+                return principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

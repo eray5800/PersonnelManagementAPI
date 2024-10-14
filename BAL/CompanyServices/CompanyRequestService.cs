@@ -83,6 +83,7 @@ public class CompanyRequestService
         {
 
             companyAdmin.CompanyId = newCompany.CompanyId;
+            companyAdmin.IsActive = true;
 
 
             await roleService.AssignRoleAsync(companyAdmin.Id.ToString(), "CompanyAdministrator");

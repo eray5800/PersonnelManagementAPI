@@ -41,6 +41,8 @@ namespace BAL.EmployeeServices
             return employeeDetail;
         }
 
+
+
         public async Task<IEnumerable<Employee>> GetAllEmployees()
         {
             var results = await unitOfWork.Employees.GetAllAsync();
@@ -105,6 +107,7 @@ namespace BAL.EmployeeServices
             employeeDetailToBeUpdated.Certifications = newEmployeeDetail.Certifications;
             employeeDetailToBeUpdated.Experiences = newEmployeeDetail.Experiences;
             employeeDetailToBeUpdated.BirthDate  = newEmployeeDetail.BirthDate;
+            
 
             // Commit changes to the database
             await unitOfWork.CommitAsync();

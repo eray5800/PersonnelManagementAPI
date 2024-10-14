@@ -56,5 +56,43 @@ namespace BAL.CompanyServices
 
             return result;
         }
+
+
+
+
+
+        public async Task<IdentityResult> FireEmployeeAsync(Guid employeeId, Guid companyId)
+        {
+            // Get the employee by their ID
+            var employee = await userManager.FindByIdAsync(employeeId.ToString());
+
+            if (employee == null)
+            {
+                return IdentityResult.Failed(new IdentityError
+                {
+                    Description = "Employee not found"
+                });
+            }
+
+           
+
+            // Check if the employee belongs to the same company
+            if (employee.CompanyId != companyId)
+            {
+                return IdentityResult.Failed(new IdentityError
+                {
+                    Description = "Employee does not belong to this company"
+                });
+            }
+
+            // Remove the employee from the company (optional: if you want to just deactivate or remove them from company)
+            employee.CompanyId = null;
+
+            // Delete the employee from the system
+            var result = await userManager.DeleteAsync(employee);
+
+            return result;
+        }
+
     }
 }

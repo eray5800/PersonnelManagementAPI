@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DAL.Models;
+using Data.Models;
 using PersonnelManagementAPI.DTO;
 
 namespace PersonnelManagementAPI.Mapping
@@ -56,10 +57,43 @@ namespace PersonnelManagementAPI.Mapping
                 .ForMember(dest => dest.Certifications, opt => opt.MapFrom(src => src.Certifications))
                 .ForMember(dest => dest.Experiences, opt => opt.MapFrom(src => src.Experiences));
 
+
+            // SaveAdminEmployeeDetailDTO -> EmployeeDetail
+            CreateMap<SaveAdminEmployeeDetailDTO, EmployeeDetail>()
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Address))
+                .ForMember(dest => dest.Position, opt => opt.MapFrom(src => src.Position))
+                .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.Department))
+                .ForMember(dest => dest.City, opt => opt.MapFrom(src => src.City))
+                .ForMember(dest => dest.BirthDate, opt => opt.MapFrom(src => src.BirthDate))
+                .ForMember(dest => dest.Educations, opt => opt.MapFrom(src => src.Educations))
+                .ForMember(dest => dest.Certifications, opt => opt.MapFrom(src => src.Certifications))
+                .ForMember(dest => dest.Experiences, opt => opt.MapFrom(src => src.Experiences))
+                .ForMember(dest => dest.RemainingLeaveDays, opt => opt.MapFrom(src => src.RemainingLeaveDays));
+
             // SaveAdminEmployeeDTO -> Employee (For Admin-specific user operations)
             CreateMap<SaveAdminEmployeeDTO, Employee>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
+
+
+            // CompanyRequest -> CompanyRequestDTO
+            CreateMap<CompanyRequest, CompanyRequestDTO>()
+                .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.CompanyId))
+                .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.CompanyName))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Address))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.EmployeeId, opt => opt.MapFrom(src => src.EmployeeId))
+                .ForMember(dest => dest.CompanyDocument, opt => opt.MapFrom(src => src.CompanyDocument))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber));
+
+            // SaveCompanyRequestDTO -> CompanyRequest
+            CreateMap<SaveCompanyRequestDTO, CompanyRequest>()
+                .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.CompanyName))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Address))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.CompanyDocument, opt => opt.MapFrom(src => src.CompanyDocument))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber));
+
 
             // LeaveRequest -> LeaveRequestDTO
             CreateMap<LeaveRequest, LeaveRequestDTO>();
