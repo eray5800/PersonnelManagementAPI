@@ -1,4 +1,4 @@
-by Eray Yenigün
+      by Eray Yenigün
 
 [ENG]
 Personel Managment Application
@@ -19,5 +19,6 @@ Uygulama mimarisinde 3 rol bulunmaktadır. Bunlar System Admin, Company Admin ve
 * Şirket admini employee lerin detaylarını güncelleyebilir izin hakkıyla beraber .
 * Şirket admini employee kovabilir.
 * Sistem otomatik olarak her gün saat 9 da o gün doğumgünü olan kişilere özel bir mail atar .
-
-
+          
+                
+        
