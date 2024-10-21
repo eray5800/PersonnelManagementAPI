@@ -29,7 +29,12 @@ namespace DAL.Configuration
             builder.HasOne(l => l.Employee)
                    .WithMany(e => e.Leaves) 
                    .HasForeignKey(l => l.EmployeeId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .OnDelete(DeleteBehavior.NoAction);
+
+           builder.HasOne(l => l.Company)
+                  .WithMany(c => c.Leaves) 
+                  .HasForeignKey(l => l.CompanyId)
+                  .OnDelete(DeleteBehavior.Cascade); 
         }
     }
 }

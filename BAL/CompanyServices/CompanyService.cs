@@ -3,6 +3,7 @@ using BAL.EmailServices;
 using BAL.RoleServices;
 using DAL.Core.IConfiguration;
 using DAL.Models;
+using Data.Models.HelperModels;
 using Microsoft.AspNetCore.Identity;
 
 namespace BAL.CompanyServices
@@ -33,6 +34,18 @@ namespace BAL.CompanyServices
             return result;
         }
 
+        public async Task<CompanyDashboardStats> GetCompanyAdminStats(Guid companyId)
+        {
+            var result = await unitOfWork.Companies.GetCompanyDashboardStats(companyId);
+            return result;
+        }
+
+        public async Task<CompanyDashboardStats> GetEmployeeDashboardStats(Guid employeeId)
+        {
+            var result = await unitOfWork.Companies.GetEmployeeDashboardStats(employeeId);
+            return result;
+        }
+
         public async Task<IdentityResult> CreateAdminEmployeeAsync(Employee employee, Guid companyId)
         {
             string randomPassword = PasswordHelper.GenerateRandomPassword(12);
@@ -56,10 +69,6 @@ namespace BAL.CompanyServices
 
             return result;
         }
-
-
-
-
 
         public async Task<IdentityResult> FireEmployeeAsync(Guid employeeId, Guid companyId)
         {

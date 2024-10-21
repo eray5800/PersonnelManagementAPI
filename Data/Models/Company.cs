@@ -16,5 +16,13 @@ namespace DAL.Models
         public virtual ICollection<CompanyHoliday> Holidays { get; set; }
         public virtual ICollection<Event> Events { get; set; }
         public virtual IEnumerable<Expense> Expenses { get; set; }
+        public virtual IEnumerable<ExpenseRequest> ExpenseRequests { get; set; }
+
+        public virtual IEnumerable<Leave> Leaves { get; set; }
+
+
+        public virtual IEnumerable<LeaveRequest> LeaveRequests { get; set; }
+
+
     }
 }

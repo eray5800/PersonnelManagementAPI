@@ -14,6 +14,16 @@ namespace DAL.Core.IConfiguration
 
         ICompanyRepository Companies { get; }
 
+        ILeaveRequestRepository LeaveRequests { get; }
+
+        ILeaveRepository Leaves { get; }
+
+        IExpenseRequestRepository ExpenseRequests { get; }
+
+        IExpenseRepository Expenses { get; }
+
+        IEventRepository Events { get; }
+
         Task<int> CommitAsync();
     }
 }

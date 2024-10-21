@@ -30,8 +30,13 @@ namespace DAL.Configuration
 
             // Relationships
             builder.HasOne(lr => lr.Employee)
-                   .WithMany(e => e.LeaveRequests) 
+                   .WithMany(e => e.LeaveRequests)
                    .HasForeignKey(lr => lr.EmployeeId)
+                   .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasOne(lr => lr.Company)
+                   .WithMany(c => c.LeaveRequests)
+                   .HasForeignKey(lr => lr.CompanyId)
                    .OnDelete(DeleteBehavior.Cascade);
         }
     }

@@ -119,7 +119,7 @@ namespace PersonnelManagementAPI.Controllers
             return NoContent();
         }
 
-        [Authorize]
+        [Authorize(Roles = "SystemAdministrator")]
         [HttpGet]
         public async Task<IActionResult> GetAllEmployees()
         {

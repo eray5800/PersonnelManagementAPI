@@ -1,6 +1,8 @@
 using BAL.CompanyServices;
 using BAL.EmailServices;
 using BAL.EmployeeServices;
+using BAL.ExpenseServices;
+using BAL.LeaveServices;
 using BAL.RoleServices;
 using DAL.Core;
 using DAL.Core.IConfiguration;
@@ -11,18 +13,23 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PersonnelManagementAPI.CronJobs; // CronJob sýnýfý ekleniyor
+using Quartz; // Quartz için gerekli
 using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// JSON seçenekleri
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
+
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(x =>
 {
@@ -52,13 +59,13 @@ builder.Services.AddSwaggerGen(x =>
     });
 });
 
+// DB Baðlantýsý
 builder.Services.AddDbContext<PersonnelManagementDBContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("MssqlConnectionString"));
 });
 
-
-
+// CORS Ayarlarý
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
@@ -69,23 +76,20 @@ builder.Services.AddCors(options =>
     });
 });
 
-
-
-
-
+// AutoMapper
 builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-
+// Identity Ayarlarý
 builder.Services.AddIdentity<Employee, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<PersonnelManagementDBContext>()
     .AddDefaultTokenProviders();
 
-
-builder.Services.AddAuthentication(options => {
+// JWT Authentication
+builder.Services.AddAuthentication(options =>
+{
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-
 })
 .AddJwtBearer(options =>
 {
@@ -98,17 +102,15 @@ builder.Services.AddAuthentication(options => {
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-        ClockSkew = TimeSpan.Zero // Varsayýlan 5 dakika clock skew'u devre dýþý býrakmak için
+        ClockSkew = TimeSpan.Zero
     };
 
-    // Token oluþturulurken ExpireMinutes ayarýný kullanarak token süresini belirleyin
     var tokenHandler = new JwtSecurityTokenHandler();
     var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]);
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
-            // Burada token oluþturma sýrasýnda Expiration süresini ayarlayabilirsiniz
             var expireMinutes = int.Parse(builder.Configuration["Jwt:ExpireMinutes"]);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -118,20 +120,37 @@ builder.Services.AddAuthentication(options => {
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
 
-            // Token'i burada response'a ekleyebilirsiniz veya manuel olarak bir yerde kullanabilirsiniz.
             return Task.CompletedTask;
         }
     };
 });
 
+// Scoped Servisler
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<CompanyRequestService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<CompanyService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<LeaveRequestService>();
+builder.Services.AddScoped<LeaveService>();
+builder.Services.AddScoped<ExpenseService>();
+builder.Services.AddScoped<ExpenseRequestService>();
 
+builder.Services.AddQuartz(q =>
+{
+    q.UseMicrosoftDependencyInjectionJobFactory();
 
+    var jobKey = new JobKey("BirthDayEmailJob");
+
+    q.AddJob<BirthDayEmailCronJob>(opts => opts.WithIdentity(jobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("BirthDayEmailTrigger")
+        .WithCronSchedule("0 00 09 * * ?"));
+});
+
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 var app = builder.Build();
 
@@ -158,7 +177,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -170,6 +188,5 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
 
 app.Run();

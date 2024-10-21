@@ -15,12 +15,17 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="PDFsharp" Version="6.1.1" />
+    <PackageReference Include="Quartz.AspNetCore" Version="3.13.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BAL\BAL.csproj" />
     <ProjectReference Include="..\DAL\DAL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Storage\CompanyRequestDocuments\" />
   </ItemGroup>
 
 </Project>

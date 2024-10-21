@@ -19,6 +19,7 @@ namespace DAL.Core.Repository
                 .ToListAsync();
         }
 
+
         public override async Task<Employee> GetByIdAsync(Guid id)
         {
             return await PersonnelManagementDBContext.Employees

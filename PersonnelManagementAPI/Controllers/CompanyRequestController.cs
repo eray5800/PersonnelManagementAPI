@@ -114,10 +114,10 @@ namespace PersonnelManagementAPI.Controllers
 
         [HttpGet("{companyId}")]
         [Authorize(Roles = "SystemAdministrator")]
-        public IActionResult GetCompanyDocument(Guid companyId)
+        public async Task<IActionResult> GetCompanyDocument(Guid companyRequestId)
         {
 
-            var companyRequest = _companyRequestService.GetCompanyRequestById(companyId).Result;
+            var companyRequest = await _companyRequestService.GetCompanyRequestById(companyRequestId);
             if (companyRequest == null)
             {
                 return NotFound();

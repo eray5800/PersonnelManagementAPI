@@ -33,7 +33,7 @@ namespace DAL.Configuration
             builder.HasOne(cr => cr.Employee)        
                    .WithMany()                      
                    .HasForeignKey(cr => cr.EmployeeId) 
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

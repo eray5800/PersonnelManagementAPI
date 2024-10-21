@@ -24,9 +24,9 @@ public class CompanyRequestService
         return companyRequest;
     }
 
-    public async Task<CompanyRequest> GetCompanyRequestById(Guid companyId)
+    public async Task<CompanyRequest> GetCompanyRequestById(Guid companyRequestId)
     {
-        var result = await unitOfWork.CompanyRequests.GetByIdAsync(companyId);
+        var result = await unitOfWork.CompanyRequests.GetByIdAsync(companyRequestId);
         return result;
     }
 

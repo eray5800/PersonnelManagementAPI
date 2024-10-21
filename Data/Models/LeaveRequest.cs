@@ -8,6 +8,10 @@ namespace DAL.Models
         public Guid EmployeeId { get; set; }
         public Employee Employee { get; set; }
 
+        public Company Company { get; set; }
+
+        public Guid? CompanyId { get; set; }
+
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
 

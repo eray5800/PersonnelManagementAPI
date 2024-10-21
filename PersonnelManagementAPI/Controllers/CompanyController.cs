@@ -52,6 +52,25 @@ namespace PersonnelManagementAPI.Controllers
             return Ok(companyDTO);
         }
 
+        [HttpGet()]
+        [Authorize(Roles = "CompanyAdministrator")]
+        public async Task<IActionResult> GetCompanyAdminStats()
+        {
+            var admin = await _employeeService.GetEmployeeByID(Guid.Parse(GetUserIdFromToken()));
+            var companyStats = await _companyService.GetCompanyAdminStats(admin.CompanyId.Value);
+            return Ok(companyStats);
+
+        }
+
+        [HttpGet("{employeeId}")]
+        [Authorize(Roles = "Employee")]
+
+        public async Task<IActionResult> GetEmployeeDashboardStats(Guid employeeId)
+        {
+            var employeeStats = await _companyService.GetEmployeeDashboardStats(employeeId);
+            return Ok(employeeStats);
+        }
+
         [HttpPost("{employeeId}")]
         [Authorize(Roles = "CompanyAdministrator")]
         public async Task<IActionResult> CreateCompanyAdminEmployee([FromBody] SaveAdminEmployeeDTO adminEmployeeDTO, Guid employeeId)
