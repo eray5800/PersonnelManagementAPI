@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using PersonnelManagementAPI.DTO;
+using PersonnelManagementAPI.Helpers;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -39,7 +40,7 @@ namespace PersonnelManagementAPI.Controllers
         [HttpGet("{companyId}")]
         public async Task<IActionResult> GetExpensesByCompanyId(Guid companyId)
         {
-            var adminCheckResult = await CompanyAdminControll();
+            var adminCheckResult = await CompanyHelper.CompanyAdminControllAsync(HttpContext, _configuration, _companyService) ;
             if (!adminCheckResult)
             {
                 return Unauthorized("You are not authorized to do this action.");
@@ -62,7 +63,7 @@ namespace PersonnelManagementAPI.Controllers
             {
                 return NotFound("Expense not found.");
             }
-            var companyAdminCheck = await CompanyAdminControll();
+            var companyAdminCheck = await CompanyHelper.CompanyAdminControllAsync(HttpContext,_configuration,_companyService);
 
             if (!companyAdminCheck)
             {
@@ -81,48 +82,5 @@ namespace PersonnelManagementAPI.Controllers
             return File(fileBytes, "application/pdf", expense.ExpenseDocument);
         }
 
-        private string GetUserIdFromToken()
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-
-            try
-            {
-                var tokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
-                return principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private async Task<bool> CompanyAdminControll()
-        {
-            var adminId = GetUserIdFromToken();
-            if (string.IsNullOrEmpty(adminId))
-            {
-                return false;
-            }
-
-            var adminCompany = await _companyService.GetCompanyByEmployeeId(Guid.Parse(adminId));
-            if (adminCompany == null || adminCompany.AdminID != Guid.Parse(adminId))
-            {
-                return false;
-
-            }
-            return true;
-        }
     }
 }

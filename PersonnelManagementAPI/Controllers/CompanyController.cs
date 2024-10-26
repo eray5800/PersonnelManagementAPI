@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using PersonnelManagementAPI.DTO;
+using PersonnelManagementAPI.Helpers;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -56,7 +57,8 @@ namespace PersonnelManagementAPI.Controllers
         [Authorize(Roles = "CompanyAdministrator")]
         public async Task<IActionResult> GetCompanyAdminStats()
         {
-            var admin = await _employeeService.GetEmployeeByID(Guid.Parse(GetUserIdFromToken()));
+            var id = TokenHelper.GetUserIdFromToken(HttpContext, _configuration);
+            var admin = await _employeeService.GetEmployeeByID(id);
             var companyStats = await _companyService.GetCompanyAdminStats(admin.CompanyId.Value);
             return Ok(companyStats);
 
@@ -101,21 +103,21 @@ namespace PersonnelManagementAPI.Controllers
         [Authorize(Roles = "CompanyAdministrator")]
         public async Task<IActionResult> FireEmployee(Guid employeeId)
         {
-            
-            var adminId = GetUserIdFromToken(); 
-            if (string.IsNullOrEmpty(adminId))
+
+            var adminId = TokenHelper.GetUserIdFromToken(HttpContext, _configuration);
+            if (adminId == Guid.Empty)
             {
                 return Unauthorized();
             }
 
-            var adminCompany = await _companyService.GetCompanyByEmployeeId(Guid.Parse(adminId));
+            var adminCompany = await _companyService.GetCompanyByEmployeeId(adminId);
 
-            if (adminCompany == null || adminCompany.AdminID != Guid.Parse(adminId))
+            if (adminCompany == null || adminCompany.AdminID != adminId)
             {
                 return Unauthorized("You are not authorized to fire employees from this company.");
             }
 
-            if (employeeId == Guid.Parse(adminId))
+            if (employeeId == adminId)
             {
                 return BadRequest("You cannot fire yourself.");
             }
@@ -138,15 +140,15 @@ namespace PersonnelManagementAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var adminId = GetUserIdFromToken();
-            if (string.IsNullOrEmpty(adminId))
+            var adminId = TokenHelper.GetUserIdFromToken(HttpContext, _configuration);
+            if (adminId == Guid.Empty)
             {
                 return Unauthorized();
             }
 
-            var adminCompany = await _companyService.GetCompanyByEmployeeId(Guid.Parse(adminId));
+            var adminCompany = await _companyService.GetCompanyByEmployeeId(adminId);
 
-            if (adminCompany == null || adminCompany.AdminID != Guid.Parse(adminId))
+            if (adminCompany == null || adminCompany.AdminID != adminId)
             {
                 return Unauthorized("You are not authorized to update employees from this company.");
             }
@@ -171,14 +173,14 @@ namespace PersonnelManagementAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var adminId = GetUserIdFromToken();
-            if (string.IsNullOrEmpty(adminId))
+            var adminId = TokenHelper.GetUserIdFromToken(HttpContext, _configuration);
+            if (adminId == Guid.Empty)
             {
                 return Unauthorized();
             }
 
-            var adminCompany = await _companyService.GetCompanyByEmployeeId(Guid.Parse(adminId));
-            if (adminCompany == null || adminCompany.AdminID != Guid.Parse(adminId))
+            var adminCompany = await _companyService.GetCompanyByEmployeeId(adminId);
+            if (adminCompany == null || adminCompany.AdminID != adminId)
             {
                 return Unauthorized("You are not authorized to add details for employees of this company.");
             }
@@ -196,39 +198,6 @@ namespace PersonnelManagementAPI.Controllers
 
             return Ok(new { Message = "Employee detail created successfully." });
         }
-
-
-
-
-
-
-        private string GetUserIdFromToken()
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-
-            try
-            {
-                var tokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
-                return principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
 
     }
 }

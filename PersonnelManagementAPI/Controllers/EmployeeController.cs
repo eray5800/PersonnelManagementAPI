@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using PersonnelManagementAPI.DTO;
+using PersonnelManagementAPI.Helpers;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -69,7 +70,7 @@ namespace PersonnelManagementAPI.Controllers
                 return Unauthorized(new { success = false, message = "Invalid Credentials" });
 
 
-            var token = await GenerateJwtToken(employee);
+            var token = await TokenHelper.GenerateJwtToken(employee,_userManager,_configuration);
             return Ok(new
             {
                 success = true,
@@ -134,7 +135,7 @@ namespace PersonnelManagementAPI.Controllers
         public async Task<IActionResult> GetEmployeeById(Guid EmployeeId)
         {
             // Get the user ID from the token
-            var requestUserId = Guid.Parse(GetUserIdFromToken());
+            var requestUserId = TokenHelper.GetUserIdFromToken(HttpContext, _configuration);
 
             // Check if the requesting user is the same as the employee
             if (EmployeeId == requestUserId)
@@ -220,60 +221,6 @@ namespace PersonnelManagementAPI.Controllers
             return NoContent();
         }
 
-        private async Task<string> GenerateJwtToken(Employee employee)
-        {
-            var userRoles = await _userManager.GetRolesAsync(employee);
 
-            var claims = new List<Claim>
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, employee.Id.ToString()),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new Claim(ClaimTypes.Name, employee.UserName),
-        new Claim("exp", DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])).ToString()) // Add expiration claim
-    };
-
-            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])),
-                signingCredentials: creds);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-
-        private string GetUserIdFromToken()
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-
-            try
-            {
-                var tokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
-                return principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            }
-            catch
-            {
-                return null;
-            }
-        }
     }
 }

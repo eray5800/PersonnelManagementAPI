@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using PersonnelManagementAPI.DTO;
+using PersonnelManagementAPI.Helpers;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -48,7 +49,7 @@ public class LeaveRequestController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var employeeId = Guid.Parse(GetUserIdFromToken());
+        var employeeId = TokenHelper.GetUserIdFromToken(HttpContext, _configuration);
         var employee = await _employeeService.GetEmployeeByID(employeeId);
         var remainDayControl = (leaveRequestDTO.EndDate - leaveRequestDTO.StartDate).Days + 1 > employee.EmployeeDetail.RemainingLeaveDays;
 
@@ -85,7 +86,7 @@ public class LeaveRequestController : ControllerBase
     [Authorize(Roles = "CompanyAdministrator")]
     public async Task<IActionResult> GetLeaveRequestsByCompanyId(Guid companyId)
     {
-        var adminCheckResult = await CompanyAdminControll();
+        var adminCheckResult = await CompanyHelper.CompanyAdminControllAsync(HttpContext, _configuration, _companyService);
         if (!adminCheckResult)
         {
             return Unauthorized("You are not authorized to do this action.");
@@ -108,7 +109,7 @@ public class LeaveRequestController : ControllerBase
     {
         try
         {
-            var adminCheckResult = await CompanyAdminControll();
+            var adminCheckResult = await CompanyHelper.CompanyAdminControllAsync(HttpContext, _configuration, _companyService);
             if (!adminCheckResult)
             {
                 return Unauthorized("You are not authorized to do this action.");
@@ -136,7 +137,7 @@ public class LeaveRequestController : ControllerBase
     {
         try
         {
-            var adminCheckResult = await CompanyAdminControll();
+            var adminCheckResult = await CompanyHelper.CompanyAdminControllAsync(HttpContext, _configuration,_companyService);
             if (!adminCheckResult)
             {
                 return Unauthorized("You are not authorized to do this action.");
@@ -151,47 +152,6 @@ public class LeaveRequestController : ControllerBase
         }
     }
 
-    private string GetUserIdFromToken()
-    {
-        var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
 
-        try
-        {
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
 
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var validatedToken);
-            return principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private async Task<bool> CompanyAdminControll()
-    {
-        var adminId = GetUserIdFromToken();
-        if (string.IsNullOrEmpty(adminId))
-        {
-            return false;
-        }
-
-        var adminCompany = await _companyService.GetCompanyByEmployeeId(Guid.Parse(adminId));
-        if (adminCompany == null || adminCompany.AdminID != Guid.Parse(adminId))
-        {
-            return false;
-
-        }
-        return true;
-    }
 }
